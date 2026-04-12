@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+/attendx-backend/.env
+/attendx-frontend/.env
+
+# Python
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+*.pyc
+
+# IDE
+.vscode/
+
+# Docs (keep tracked)
+# BUILD_GUIDE.md
+# PRD.md
+# SRD (1).md
+# USER_GUIDE.md
