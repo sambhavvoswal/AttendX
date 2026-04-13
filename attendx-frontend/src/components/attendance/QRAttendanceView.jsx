@@ -90,11 +90,31 @@ export function QRAttendanceView({
 
       {/* Sidebar (desktop) / Bottom sheet (mobile) */}
       <AnimatePresence>
+        {showPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowPanel(false)}
+            className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-20"
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {(showPanel || typeof window !== 'undefined') && (
           <motion.div
-            initial={{ x: '100%', opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.4}
+            onDragEnd={(e, info) => {
+              if (info.offset.y > 100 || info.velocity.y > 500) {
+                setShowPanel(false);
+              }
+            }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={`
               ${showPanel ? 'flex' : 'hidden'} md:flex
@@ -106,8 +126,8 @@ export function QRAttendanceView({
             `}
           >
             {/* Drag handle (mobile) */}
-            <div className="md:hidden flex justify-center py-2">
-              <div className="w-10 h-1 rounded-full bg-border" />
+            <div className="md:hidden flex justify-center py-3 cursor-grab active:cursor-grabbing w-full">
+              <div className="w-12 h-1.5 rounded-full bg-border" />
             </div>
 
             {/* Quick Manual Input */}

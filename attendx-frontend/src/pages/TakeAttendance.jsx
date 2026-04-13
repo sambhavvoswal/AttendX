@@ -41,6 +41,7 @@ export default function TakeAttendance() {
   const [scanMessage, setScanMessage] = useState({ text: '', type: 'info' });
   const [showAddModal, setShowAddModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
   // Warn on browser refresh/close if session active
@@ -89,7 +90,12 @@ export default function TakeAttendance() {
   };
 
   // End session and show stats
-  const handleEnd = async () => {
+  const handleEnd = () => {
+    setShowEndModal(true);
+  };
+
+  const confirmEnd = async () => {
+    setShowEndModal(false);
     await handleEndSession();
     setShowStats(true);
   };
@@ -281,6 +287,53 @@ export default function TakeAttendance() {
               }
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* End Session Confirmation Modal */}
+      <AnimatePresence>
+        {showEndModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowEndModal(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative bg-surface border border-border w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-text-primary mb-2">Upload to Database?</h3>
+                <p className="text-sm text-text-secondary leading-relaxed mb-6">
+                  This will securely write all your scanned attendance records into the main Google Sheets database. Are you sure you are ready to conclude this session?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowEndModal(false)}
+                    className="flex-1 py-2.5 rounded-lg font-bold text-sm text-text-secondary bg-surface-header hover:bg-white/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmEnd}
+                    className="flex-1 py-2.5 rounded-lg font-bold text-sm text-bg bg-accent hover:opacity-90 transition-opacity flex justify-center items-center gap-2"
+                  >
+                    Upload Data
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
