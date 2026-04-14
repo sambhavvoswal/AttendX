@@ -1,0 +1,25 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'attendx-backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push Subtree to HF
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git config --global user.email "bot@attendx.com"
+          git config --global user.name "AttendX Bot"
+          
+          # This command extracts the attendx-backend folder and pushes it to the HF remote
+          git subtree push --prefix attendx-backend https://sambhavvoswal:$HF_TOKEN@huggingface.co/spaces/sambhavvoswal/attendx-backend main
