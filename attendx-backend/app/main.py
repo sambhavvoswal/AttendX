@@ -24,6 +24,15 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root():
+    return {
+        "message": "AttendX API is live! ✨",
+        "docs": "/docs",
+        "health": "/ping"
+    }
+
+
 @app.get("/ping")
 def ping():
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
