@@ -15,5 +15,11 @@ export const attendanceService = {
   addStudent: async (sheetId, studentData) => {
     const response = await api.post(`/api/sheets/${sheetId}/students`, { student_data: studentData });
     return response.data;
+  },
+
+  getAnalytics: async (sheetId, columns = []) => {
+    const query = columns.length > 0 ? `?columns=${columns.map(encodeURIComponent).join(',')}` : '';
+    const response = await api.get(`/api/attendance/${sheetId}/analytics${query}`);
+    return response.data;
   }
 };

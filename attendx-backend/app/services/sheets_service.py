@@ -49,12 +49,16 @@ class SheetsService:
                 return False
             raise  # other errors propagate up
 
-    def get_students(self, sheet_id: str, client: gspread.Client) -> list[dict]:
-        """Returns all rows with only non-attendance columns."""
+    def get_students(self, sheet_id: str, client: gspread.Client, include_dates: bool = False) -> list[dict]:
+        """Returns all rows. If include_dates is False, strips attendance columns."""
         ws = client.open_by_key(sheet_id).sheet1
+        all_records = ws.get_all_records()
+        
+        if include_dates:
+            return all_records
+            
         headers = ws.row_values(1)
         non_att_headers = [h for h in headers if not is_date_column(h)]
-        all_records = ws.get_all_records()
         return [{k: row.get(k, '') for k in non_att_headers} for row in all_records]
 
     def get_columns(self, sheet_id: str, client: gspread.Client) -> dict:

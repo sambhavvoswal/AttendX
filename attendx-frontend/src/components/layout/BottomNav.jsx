@@ -16,7 +16,7 @@ export function BottomNav() {
           <span className="font-medium">Dashboard</span>
         </NavLink>
         <NavLink
-          to="/dashboard"
+          to="/analytics"
           className={({ isActive }) =>
             `${base} ${isActive ? 'text-accent' : 'text-text-secondary'}`
           }

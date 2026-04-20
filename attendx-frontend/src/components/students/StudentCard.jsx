@@ -2,12 +2,13 @@ import React from 'react';
 import { Badge } from '../ui/Badge';
 import { motion } from 'framer-motion';
 
-export function StudentCard({ student, primaryKey, rank }) {
+import { calcAttendancePercent } from '../../utils/attendanceCalc';
+
+export function StudentCard({ student, primaryKey, rank, attendanceConfig }) {
   const pkValue = student[primaryKey] || 'N/A';
   const entries = Object.entries(student).filter(([k]) => k !== primaryKey);
   
-  // Base percentage calculation stub
-  const mockPercentage = Math.floor(Math.random() * (100 - 40 + 1)) + 40;
+  const percentage = calcAttendancePercent(student, attendanceConfig);
 
   return (
     <motion.div 
@@ -22,7 +23,7 @@ export function StudentCard({ student, primaryKey, rank }) {
            <div className="text-lg font-bold text-text-primary mr-2 truncate">
              {pkValue}
            </div>
-           <Badge percentage={mockPercentage} />
+           <Badge percentage={percentage} />
         </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-secondary">
           {entries.map(([k, v]) => (

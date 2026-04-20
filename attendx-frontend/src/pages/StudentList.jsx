@@ -75,6 +75,7 @@ export function StudentList() {
                student={student} 
                primaryKey={activeSheet.primary_key_column} 
                rank={idx + 1}
+               attendanceConfig={activeSheet.attendance_values || []}
              />
            </motion.div>
          ))}

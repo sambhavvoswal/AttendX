@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Dict, Any, Optional
+import re
 
 from app.schemas.attendance import (
     SessionStartRequest,
@@ -100,5 +101,97 @@ def end_session(req: SessionEndRequest, user: dict = Depends(get_current_user)):
         "unmarked_default": req.unmarked_default,
         "ended_at": firebase_service.now_ts()
     }
-    updated_session = firebase_service.update_session(req.session_id, updates)
-    return updated_session
+    firebase_service.update_session(req.session_id, updates)
+    
+    return {"status": "success", "session_id": req.session_id, "marked_count": len(final_marks)}
+
+@router.get("/{sheet_id}/analytics")
+def get_analytics(sheet_id: str, columns: Optional[str] = Query(None), user: dict = Depends(get_current_user)):
+    sheet = firebase_service.get_sheet(sheet_id)
+    if not sheet:
+        raise HTTPException(status_code=404, detail="Sheet not found")
+        
+    client = sheets_service.build_client()
+    try:
+        students = sheets_service.get_students(sheet["google_sheet_id"], client, include_dates=True)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch Google Sheet data: {str(e)}")
+
+    attendance_values = sheet.get("attendance_values", [])
+    positive_values = {v["value"] for v in attendance_values if v.get("is_positive")}
+    
+    available_columns = []
+    date_columns = []
+    
+    if students:
+        all_cols = list(students[0].keys())
+        pk_col = sheet.get("primary_key_column")
+        exclude = {pk_col, "Batch", "VSN"}
+        exclude.update(sheet.get("qr_key_mapping", {}).values())
+        
+        available_columns = [str(c) for c in all_cols if c not in exclude and c]
+        
+        if columns is not None and columns.strip():
+            # User specifically selected columns from the UI
+            selected = [c.strip() for c in columns.split(",")]
+            date_columns = [c for c in available_columns if c in selected]
+        else:
+            # Auto-detect using broad regex
+            date_regex = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{1,2}/\d{1,2}/\d{2,4}$|^\d{4}/\d{2}/\d{2}$")
+            date_columns = [col for col in available_columns if date_regex.match(col)]
+        
+        # Avoid sort so it stays in column order, OR sort it. Default column order is usually chronological anyway.
+        # Let's keep it as is (sheet's natural order).
+        
+    sessions = []
+    overall_value_totals = {}
+    
+    for date in date_columns:
+        sessions.append({
+            "date": date,
+            "value_counts": {},
+            "total": 0
+        })
+
+    student_summary = []
+    pk_col = sheet.get("primary_key_column")
+    # Tries to find which column represents "Name" based on qr_key_mapping or defaults to "Name"
+    name_col = next((v for k, v in sheet.get("qr_key_mapping", {}).items() if k.lower() == "name"), "Name")
+
+    for student in students:
+        pk_value = student.get(pk_col, "Unknown") if pk_col else student.get("id", "Unknown")
+        name_value = student.get(name_col, "Unknown")
+        
+        student_pos_count = 0
+        student_total_sessions = 0
+        
+        for idx, date in enumerate(date_columns):
+            val = student.get(date)
+            if val and str(val).strip():
+                val_str = str(val).strip()
+                sessions[idx]["total"] += 1
+                sessions[idx]["value_counts"][val_str] = sessions[idx]["value_counts"].get(val_str, 0) + 1
+                overall_value_totals[val_str] = overall_value_totals.get(val_str, 0) + 1
+                
+                student_total_sessions += 1
+                if val_str in positive_values:
+                    student_pos_count += 1
+                    
+        percent = round((student_pos_count / student_total_sessions) * 100, 1) if student_total_sessions > 0 else 0
+        student_summary.append({
+            **student,
+            "pk_value": pk_value,
+            "name": name_value,
+            "percentage": percent,
+            "positive_count": student_pos_count,
+            "total_sessions": student_total_sessions
+        })
+        
+    return {
+        "sessions": sessions,
+        "overall_value_totals": overall_value_totals,
+        "student_summary": student_summary,
+        "attendance_values": attendance_values,
+        "available_columns": available_columns,
+        "selected_columns": date_columns
+    }
