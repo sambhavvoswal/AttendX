@@ -24,13 +24,13 @@ def get_current_user(authorization: str = Header(...)):
 
 
 async def require_admin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") not in ("admin", "superadmin"):
+    if current_user.get("role") not in ("org_admin", "super_admin"):
         raise HTTPException(403, "Admin access required")
     return current_user
 
 
 async def require_superadmin(current_user: dict = Depends(get_current_user)):
-    if current_user.get("role") != "superadmin":
+    if current_user.get("role") != "super_admin":
         raise HTTPException(403, "Superadmin access required")
     return current_user
 

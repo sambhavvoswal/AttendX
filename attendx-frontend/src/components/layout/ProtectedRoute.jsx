@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 
 export function ProtectedRoute({
   children,
-  allowedRoles = ['user', 'admin', 'superadmin'],
+  allowedRoles = ['user', 'org_admin', 'super_admin'],
 }) {
   useAuth();
   const { user, role, status, isLoading, loadingMessage } = useAuthStore((s) => ({
@@ -28,6 +28,8 @@ export function ProtectedRoute({
 
   if (!user) return <Navigate to="/login" replace />;
   if (status === 'disabled') return <Navigate to="/disabled" replace />;
+  if (status === 'pending_approval') return <Navigate to="/pending-approval" replace />;
+  
   if (role && !allowedRoles.includes(role)) return <Navigate to="/dashboard" replace />;
 
   return children;

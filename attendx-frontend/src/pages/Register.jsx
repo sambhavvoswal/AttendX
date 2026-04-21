@@ -7,15 +7,25 @@ import { auth, createUserWithEmailAndPassword } from '../services/firebase';
 export function Register() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
+  const [action, setAction] = useState('join');
   const [orgName, setOrgName] = useState('');
+  const [orgId, setOrgId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
 
   const validate = () => {
-    if (!name.trim() || !orgName.trim() || !email.trim() || !password || !confirm) {
-      toast.error('All fields are required');
+    if (!name.trim() || !email.trim() || !password || !confirm) {
+      toast.error('Standard profile fields are required');
+      return false;
+    }
+    if (action === 'create' && !orgName.trim()) {
+      toast.error('Organization Name is required to create a workspace');
+      return false;
+    }
+    if (action === 'join' && !orgId.trim()) {
+      toast.error('Organization ID is required to join an existing workspace');
       return false;
     }
     if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) {
@@ -36,10 +46,12 @@ export function Register() {
       await createUserWithEmailAndPassword(auth, email, password);
       await api.post('/api/auth/register', {
         name: name.trim(),
-        org_name: orgName.trim(),
+        action,
+        org_name: action === 'create' ? orgName.trim() : "",
+        org_id: action === 'join' ? orgId.trim() : "",
         email: email.trim(),
       });
-      toast.success('Welcome to AttendX! Your account is ready.');
+      toast.success('Registration successful. Your account is pending administrator approval.');
       navigate('/dashboard');
     } catch (err) {
       toast.error(err?.message || 'Registration failed');
@@ -54,7 +66,7 @@ export function Register() {
         <div className="rounded-2xl border border-border bg-surface p-6">
           <h1 className="font-[Fraunces] text-3xl tracking-tight">Create account</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            In v1.0, accounts are active immediately after registration.
+            Join an existing workspace or create a new one.
           </p>
 
           <div className="mt-6 space-y-3">
@@ -67,14 +79,44 @@ export function Register() {
               />
             </label>
 
-            <label className="block text-sm">
-              <div className="mb-1 text-xs text-text-secondary">Organization name</div>
-              <input
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                className="w-full rounded-xl border border-border bg-bg px-3 py-3 text-sm outline-none focus:border-accent/60"
-              />
-            </label>
+            <div className="flex bg-bg rounded-lg p-1 border border-border">
+               <button 
+                 type="button"
+                 onClick={() => setAction('join')}
+                 className={`flex-1 text-xs font-bold py-2 rounded-md transition-colors ${action === 'join' ? 'bg-surface border border-border shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+               >
+                 Join Existing
+               </button>
+               <button 
+                 type="button"
+                 onClick={() => setAction('create')}
+                 className={`flex-1 text-xs font-bold py-2 rounded-md transition-colors ${action === 'create' ? 'bg-surface border border-border shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+               >
+                 Create New
+               </button>
+            </div>
+
+            {action === 'join' ? (
+              <label className="block text-sm">
+                <div className="mb-1 text-xs text-text-secondary">Join Code / Organization ID</div>
+                <input
+                  value={orgId}
+                  onChange={(e) => setOrgId(e.target.value)}
+                  placeholder="e.g. org_XYZ123"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-3 text-sm outline-none focus:border-accent/60"
+                />
+              </label>
+            ) : (
+              <label className="block text-sm">
+                <div className="mb-1 text-xs text-text-secondary">New Organization Name</div>
+                <input
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  placeholder="e.g. Global High School"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-3 text-sm outline-none focus:border-accent/60"
+                />
+              </label>
+            )}
 
             <label className="block text-sm">
               <div className="mb-1 text-xs text-text-secondary">Email</div>

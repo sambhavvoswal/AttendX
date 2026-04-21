@@ -82,6 +82,8 @@ def create_user_doc(
     org_name: str,
     org_id: str,
     auth_provider: str,
+    role: str = "user",
+    status: str = "pending_approval",
 ) -> dict[str, Any]:
     db = get_firestore_client()
     data = {
@@ -90,8 +92,8 @@ def create_user_doc(
         "name": name,
         "org_name": org_name,
         "org_id": org_id,
-        "role": "user",
-        "status": "active",
+        "role": role,
+        "status": status,
         "auth_provider": auth_provider,
         "created_at": now_ts(),
         "disabled_at": None,

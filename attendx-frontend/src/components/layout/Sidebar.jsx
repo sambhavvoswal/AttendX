@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { auth, signOut } from '../../services/firebase';
+import { useAuthStore } from '../../store/authStore';
 function Item({ to, label }) {
   return (
     <NavLink
@@ -21,6 +22,7 @@ function Item({ to, label }) {
 
 export function Sidebar() {
   const navigate = useNavigate();
+  const role = useAuthStore(s => s.role);
 
   const handleLogout = async () => {
     if (window.confirm("Are you sure you want to log out?")) {
@@ -47,6 +49,9 @@ export function Sidebar() {
           <Item to="/dashboard" label="Dashboard" />
           <Item to="/analytics" label="Analytics" />
           <Item to="/qr-generator" label="QR Generator" />
+          {(role === 'org_admin' || role === 'super_admin') && (
+            <Item to="/admin" label="Admin Portal" />
+          )}
         </div>
       </div>
 

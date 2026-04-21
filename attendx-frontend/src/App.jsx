@@ -6,6 +6,7 @@ import { Login } from './pages/Login.jsx';
 import { Register } from './pages/Register.jsx';
 import { GoogleSetup } from './pages/GoogleSetup.jsx';
 import { Disabled } from './pages/Disabled.jsx';
+import { PendingApproval } from './pages/PendingApproval.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
 import { SheetSetup } from './pages/SheetSetup.jsx';
 import { StudentList } from './pages/StudentList.jsx';
@@ -13,6 +14,11 @@ import { SheetSettings } from './pages/SheetSettings.jsx';
 import TakeAttendance from './pages/TakeAttendance.jsx';
 import Analytics from './pages/Analytics.jsx';
 import QRGeneratorPage from './pages/QRGeneratorPage.jsx';
+
+// Admin Layer
+import { AdminDashboard } from './pages/admin/AdminDashboard.jsx';
+import { OrgList } from './pages/admin/OrgList.jsx';
+import { PendingUsers } from './pages/admin/PendingUsers.jsx';
 
 export default function App() {
   return (
@@ -22,6 +28,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/google-setup" element={<GoogleSetup />} />
       <Route path="/disabled" element={<Disabled />} />
+      <Route path="/pending-approval" element={<PendingApproval />} />
 
       <Route
         path="/dashboard"
@@ -89,6 +96,38 @@ export default function App() {
           <ProtectedRoute>
             <PageShell>
               <Analytics />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Topology */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['org_admin', 'super_admin']}>
+            <PageShell>
+              <AdminDashboard />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/orgs"
+        element={
+          <ProtectedRoute allowedRoles={['super_admin']}>
+            <PageShell>
+              <OrgList />
+            </PageShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/pending"
+        element={
+          <ProtectedRoute allowedRoles={['org_admin', 'super_admin']}>
+            <PageShell>
+              <PendingUsers />
             </PageShell>
           </ProtectedRoute>
         }

@@ -8,21 +8,33 @@ export function GoogleSetup() {
   const navigate = useNavigate();
   const defaultName = useMemo(() => auth.currentUser?.displayName || '', []);
   const [name, setName] = useState(defaultName);
+  const [action, setAction] = useState('join'); // 'join' or 'create'
   const [orgName, setOrgName] = useState('');
+  const [orgId, setOrgId] = useState('');
   const [busy, setBusy] = useState(false);
 
   const onSubmit = async () => {
-    if (!name.trim() || !orgName.trim()) {
-      toast.error('Name and organization are required');
+    if (!name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+    if (action === 'create' && !orgName.trim()) {
+      toast.error('Organization name is required to create a formal workspace');
+      return;
+    }
+    if (action === 'join' && !orgId.trim()) {
+      toast.error('Please enter the specific Organization ID you wish to join');
       return;
     }
     setBusy(true);
     try {
       await api.post('/api/auth/google-setup', {
         name: name.trim(),
-        org_name: orgName.trim(),
+        action,
+        org_name: action === 'create' ? orgName.trim() : "",
+        org_id: action === 'join' ? orgId.trim() : "",
       });
-      toast.success('Welcome to AttendX! Your account is ready.');
+      toast.success('Onboarding complete! Your account is pending admin approval.');
       navigate('/dashboard');
     } catch (err) {
       toast.error(err?.response?.data?.detail || err?.message || 'Setup failed');
@@ -50,14 +62,44 @@ export function GoogleSetup() {
               />
             </label>
 
-            <label className="block text-sm">
-              <div className="mb-1 text-xs text-text-secondary">Organization name</div>
-              <input
-                value={orgName}
-                onChange={(e) => setOrgName(e.target.value)}
-                className="w-full rounded-xl border border-border bg-bg px-3 py-3 text-sm outline-none focus:border-accent/60"
-              />
-            </label>
+            <div className="flex bg-bg rounded-lg p-1 border border-border">
+               <button 
+                 type="button"
+                 onClick={() => setAction('join')}
+                 className={`flex-1 text-xs font-bold py-2 rounded-md transition-colors ${action === 'join' ? 'bg-surface border border-border shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+               >
+                 Join Existing
+               </button>
+               <button 
+                 type="button"
+                 onClick={() => setAction('create')}
+                 className={`flex-1 text-xs font-bold py-2 rounded-md transition-colors ${action === 'create' ? 'bg-surface border border-border shadow text-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
+               >
+                 Create New
+               </button>
+            </div>
+
+            {action === 'join' ? (
+              <label className="block text-sm">
+                <div className="mb-1 text-xs text-text-secondary">Join Code / Organization ID</div>
+                <input
+                  value={orgId}
+                  onChange={(e) => setOrgId(e.target.value)}
+                  placeholder="e.g. org_XYZ123"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-3 text-sm outline-none focus:border-accent/60"
+                />
+              </label>
+            ) : (
+              <label className="block text-sm">
+                <div className="mb-1 text-xs text-text-secondary">New Organization Name</div>
+                <input
+                  value={orgName}
+                  onChange={(e) => setOrgName(e.target.value)}
+                  placeholder="e.g. Global High School"
+                  className="w-full rounded-xl border border-border bg-bg px-3 py-3 text-sm outline-none focus:border-accent/60"
+                />
+              </label>
+            )}
 
             <button
               type="button"

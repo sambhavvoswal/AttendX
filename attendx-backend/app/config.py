@@ -12,10 +12,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str | None = None
     GOOGLE_REDIRECT_URI: str | None = None
 
-    EMAIL_SENDER: str | None = None
-    EMAIL_PASSWORD: str | None = None
-    SMTP_HOST: str | None = None
-    SMTP_PORT: int = 587
+    RESEND_API_KEY: str | None = None
+    EMAIL_FROM: str | None = "onboarding@resend.dev"
 
 
 settings = Settings()

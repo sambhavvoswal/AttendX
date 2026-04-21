@@ -5,14 +5,21 @@ from app.schemas.user import UserResponse, UserMoveOrg
 from app.schemas.org import OrgCreate, OrgUpdate, OrgResponse
 from app.dependencies import require_admin, require_superadmin
 from app.services.firebase_service import (
-    get_users, update_user_status, update_user_org,
+    get_users, get_user_doc, update_user_status, update_user_org,
     get_orgs, get_org, update_org, delete_org, create_org_doc, now_ts
 )
+from app.services.email_service import send_approval_email, send_rejection_email
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.get("/users")
 async def list_users(org_id: Optional[str] = None, status: Optional[str] = None, current_user: dict = Depends(require_admin)):
+    # Org admins can only see their own org's users
+    if current_user["role"] == "org_admin":
+        if org_id and org_id != current_user["org_id"]:
+            raise HTTPException(status_code=403, detail="Cannot query users for a different organization")
+        org_id = current_user["org_id"]
+        
     users = get_users(org_id=org_id, status=status)
     return users
 
@@ -29,6 +36,40 @@ async def enable_user(uid: str, current_user: dict = Depends(require_superadmin)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"uid": uid, "status": "active"}
+
+@router.put("/users/{uid}/approve")
+async def approve_user(uid: str, current_user: dict = Depends(require_admin)):
+    user = get_user_doc(uid)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Org admin restriction
+    if current_user["role"] == "org_admin" and current_user["org_id"] != user.get("org_id"):
+        raise HTTPException(status_code=403, detail="Cannot approve user for a different organization")
+
+    updated = update_user_status(uid, "active")
+    if updated:
+        org_name = updated.get("org_name", "your organization")
+        send_approval_email(updated.get("email"), org_name, updated.get("role", "user"))
+        
+    return {"uid": uid, "status": "active"}
+
+@router.put("/users/{uid}/reject")
+async def reject_user(uid: str, current_user: dict = Depends(require_admin)):
+    user = get_user_doc(uid)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Org admin restriction
+    if current_user["role"] == "org_admin" and current_user["org_id"] != user.get("org_id"):
+        raise HTTPException(status_code=403, detail="Cannot reject user for a different organization")
+
+    updated = update_user_status(uid, "rejected")
+    if updated:
+        org_name = user.get("org_name", "your organization")
+        send_rejection_email(user.get("email"), org_name)
+        
+    return {"uid": uid, "status": "rejected"}
 
 @router.put("/users/{uid}/move-org")
 async def move_user_org(uid: str, payload: UserMoveOrg, current_user: dict = Depends(require_admin)):

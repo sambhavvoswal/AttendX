@@ -5,7 +5,12 @@ import { useSheetStore } from '../store/sheetStore';
 export function useSheet() {
   const { sheets, recentSheets, activeSheet, setSheets, setRecentSheets, setActiveSheet, setLoading, setError } = useSheetStore();
 
-  const fetchSheets = useCallback(async () => {
+  const fetchSheets = useCallback(async (force = false) => {
+    const currentSheets = useSheetStore.getState().sheets;
+    if (!force && currentSheets.length > 0) {
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await sheetsService.getSheets();
@@ -27,7 +32,12 @@ export function useSheet() {
     }
   }, [setRecentSheets]);
 
-  const loadSheet = useCallback(async (id) => {
+  const loadSheet = useCallback(async (id, force = false) => {
+    const currentActive = useSheetStore.getState().activeSheet;
+    if (!force && currentActive?.sheet_id === id) {
+      return currentActive;
+    }
+
     setLoading(true);
     try {
       const data = await sheetsService.getSheet(id);
